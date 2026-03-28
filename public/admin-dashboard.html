@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LegalEase · Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js"></script>
+  <style>
+    .admin-header {
+      background: linear-gradient(135deg, #2c3e50, #1a252f);
+      padding: 1rem 2rem;
+      margin: -2rem -2rem 2rem -2rem;
+      border-radius: 16px 16px 0 0;
+      color: white;
+    }
+
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary-1), var(--primary-2));
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: var(--primary-1);
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .stat-change {
+      font-size: 0.8rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+
+    .stat-change.positive {
+      background: rgba(46, 213, 115, 0.15);
+      color: #2ed573;
+    }
+
+    .stat-change.negative {
+      background: rgba(255, 71, 87, 0.15);
+      color: #ff4757;
+    }
+
+    .admin-tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      padding: 1rem 1.5rem;
+      border: none;
+      border-radius: 8px 8px 0 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .tab-btn.active {
+      color: var(--primary-1);
+      background: rgba(106, 92, 255, 0.1);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--primary-1);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .data-table th {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+    }
+
+    .data-table td {
+      padding: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .data-table tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .action-btn {
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.8rem;
+      margin-right: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .action-btn.danger {
+      background: rgba(255, 71, 87, 0.2);
+      border-color: rgba(255, 71, 87, 0.5);
+      color: #ff4757;
+    }
+
+    .action-btn.success {
+      background: rgba(46, 213, 115, 0.2);
+      border-color: rgba(46, 213, 115, 0.5);
+      color: #2ed573;
+    }
+
+    .status-badge {
+      padding: 0.3rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-active {
+      background: rgba(46, 213, 115, 0.15);
+      color: #2ed573;
+    }
+
+    .status-suspended {
+      background: rgba(255, 193, 7, 0.15);
+      color: #ffc107;
+    }
+
+    .status-banned {
+      background: rgba(255, 71, 87, 0.15);
+      color: #ff4757;
+    }
+
+    .search-controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .activity-log {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      padding: 0.8rem;
+      border-left: 3px solid var(--primary-1);
+      background: rgba(255, 255, 255, 0.05);
+      margin-bottom: 0.5rem;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      max-width: 350px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .notification.success {
+      background: linear-gradient(135deg, #2ed573, #1e90ff);
+    }
+
+    .notification.error {
+      background: linear-gradient(135deg, #ff4757, #ff3742);
+    }
+
+    .notification.warning {
+      background: linear-gradient(135deg, #ffa502, #ff6348);
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <div class="container" style="max-width: 1400px; margin: 2rem auto; padding: 1rem;">
+    <div class="glass-card" style="padding: 2rem;">
+      <!-- Admin Header -->
+      <div class="admin-header">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <h1 style="margin: 0; font-size: 1.8rem;">Admin Dashboard</h1>
+            <p style="margin: 0.5rem 0 0 0; opacity: 0.9;" id="adminWelcome">Welcome back, Admin</p>
+          </div>
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <button class="btn" onclick="logout()" style="background: rgba(255,255,255,0.2);">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistics Overview -->
+      <div class="admin-stats" id="statsOverview">
+        <div class="stat-card">
+          <span class="stat-number" id="totalUsers">0</span>
+          <div class="stat-label">Total Users</div>
+          <div class="stat-change positive" id="userChange">+0 this week</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number" id="activeUsers">0</span>
+          <div class="stat-label">Active Users (30 days)</div>
+          <div class="stat-change positive" id="activeChange">+0 this month</div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="admin-tabs">
+        <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+        <button class="tab-btn" onclick="switchTab('users')">User Management</button>
+        <button class="tab-btn" onclick="switchTab('logs')">Activity Logs</button>
+      </div>
+
+      <!-- Overview Tab -->
+      <div id="overview-tab" class="tab-content active">
+        <div class="quick-stats">
+          <div class="stat-card">
+            <div class="stat-number" id="newUsers">0</div>
+            <div class="stat-label">New Users Today</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="adminActions">0</div>
+            <div class="stat-label">Admin Actions (24h)</div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <h3>User Growth Trend</h3>
+          <canvas id="userGrowthChart" width="800" height="300"></canvas>
+        </div>
+      </div>
+
+      <!-- Users Management Tab -->
+      <div id="users-tab" class="tab-content">
+        <h2>User Management</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Created Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 2rem;">Loading users...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Logs Tab -->
+      <div id="logs-tab" class="tab-content">
+        <h2>Activity Logs</h2>
+        <div class="activity-log" id="activityLog">
+          <div class="log-entry">
+            <strong>System Startup</strong> - Dashboard initialized
+            <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem;">
+              Just now
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTab = 'overview';
+    let allUsers = [];
+
+    // Dashboard Init
+    async function initDashboard() {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('adminWelcome').textContent = `Welcome back, ${user.name || 'Admin'}`;
+
+        await loadStats();
+        await loadUsers();
+        renderUserGrowthChart();
+        showNotification('Dashboard loaded successfully', 'success');
+      } catch (error) {
+        console.error(error);
+        showNotification('Error loading dashboard data', 'error');
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/admin/stats', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+          const stats = await response.json();
+          document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    async function loadUsers() {
+      try {
+        const response = await fetch('/api/admin/users', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          allUsers = data.users || data;
+          displayUsers(allUsers);
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Error loading users</td></tr>';
+      }
+    }
+
+    function displayUsers(users) {
+      const tbody = document.getElementById('usersTableBody');
+      if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No users found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = users.map(user => `
+        <tr class="shadow-soft hover-lift">
+          <td style="padding:1rem;">${window.utils.formatDate(user.created_at)}</td>
+          <td style="padding:1rem; font-weight:600;">${window.utils.escapeHTML(user.name)}</td>
+          <td style="padding:1rem;">${window.utils.escapeHTML(user.email)}</td>
+          <td style="padding:1rem;">
+            <span class="badge" style="background:var(--primary); color:white; padding:4px 8px; border-radius:6px; font-size:0.8rem;">
+              ${user.contractCount || 0} Contracts
+            </span>
+          </td>
+          <td style="padding:1rem;">
+            <button class="btn btn-sm" onclick="viewUserContracts(${user.id})">Details</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      document.getElementById(`${tabName}-tab`).classList.add('active');
+      currentTab = tabName;
+    }
+
+    function renderUserGrowthChart() {
+      const ctx = document.getElementById('userGrowthChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+          datasets: [{
+            label: "New Users",
+            data: [5, 9, 7, 14, 12, 20, 15],
+            borderColor: "#2ed573",
+            backgroundColor: "rgba(46, 213, 115, 0.2)",
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: true } } }
+      });
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+
+    initDashboard();
+    window.switchTab = switchTab;
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>LegalEase · Sign Up</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-box">
+      <div class="text-center">
+        <div class="auth-logo">
+          <div class="brand-logo bg-gradient-primary shadow-neon-primary" style="width:48px;height:48px;border-radius:14px; display:grid; place-items:center">
+            <span style="width:24px; height:24px; display:inline-block">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M6 3h12M3 7h18M5 7l3 13h8l3-13"/><path d="M7 17h10"/></svg>
+            </span>
+          </div>
+          <h1 class="text-gradient" style="margin:0; font-size:1.8rem; font-weight:800">LegalEase</h1>
+        </div>
+        <p class="text-muted small">Your AI Legal Assistant</p>
+      </div>
+
+      <div class="glass-card" style="padding:16px; margin-top:12px">
+        <h2 class="text-center" style="margin:.2rem 0 0">Create Account</h2>
+        <p class="text-center text-muted small" style="margin:.2rem 0 1rem">Get started with your AI legal assistant</p>
+        <form class="auth-form" id="signupForm">
+          <label class="label">Full Name</label>
+          <input class="input" id="name" type="text" placeholder="Enter your full name" required>
+
+          <label class="label">Email Address</label>
+          <input class="input" id="email" type="email" placeholder="Enter your email" required>
+
+          <label class="label">Password</label>
+          <div style="display:flex; gap:.5rem">
+            <input class="input" id="password" type="password" placeholder="Create a password" required style="flex:1">
+            <button type="button" class="btn toggle-pass">Show</button>
+          </div>
+
+          <label class="label">Confirm Password</label>
+          <div style="display:flex; gap:.5rem">
+            <input class="input" id="confirm" type="password" placeholder="Confirm your password" required style="flex:1">
+            <button type="button" class="btn toggle-pass">Show</button>
+          </div>
+
+          <button type="submit" class="btn btn-legal" style="width:100%">Create Account</button>
+        </form>
+
+        <hr style="border:none; border-top:1px solid var(--border); margin:16px 0">
+        <p class="text-center small text-muted">Already have an account? <a class="text-gradient" href="login.html">Sign in</a></p>
+      </div>
+
+      <p class="text-center small text-muted" style="margin-top:10px">© 2025 LegalEase. All rights reserved.</p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+  attachAuth();
+  document.getElementById("signupForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const confirm = document.getElementById("confirm").value;
+
+    if (password !== confirm) {
+      alert("❌ Passwords do not match");
+      return;
+    }
+
+    const res = await fetch("http://localhost:5000/api/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await res.json();
+    if (data.error) {
+      alert("❌ " + data.error);
+    } else {
+      alert("✅ Account created, please login!");
+      window.location.href = "login.html";
+    }
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LegalEase · My Profile</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <script>
+    if (!localStorage.getItem("token")) {
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <div id="app"></div>
+  <script src="script.js"></script>
+  <script>
+    renderLayout(`
+      <section class="glass-card" style="padding:16px">
+        <h2 class="text-gradient" style="margin:.2rem 0 1rem">My Profile</h2>
+        <div id="profileBox" style="margin-bottom:1.5rem; font-size:.95rem; line-height:1.6"></div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0 0.5rem;">
+          <h3 class="text-gradient" style="margin: 0;">Contract History</h3>
+          <a href="contracts.html" class="btn btn-sm">+ New Contract</a>
+        </div>
+        
+        <div id="contractStats" style="margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 0.9rem;">
+          Loading statistics...
+        </div>
+        
+        <table id="historyTable" style="width:100%; border-collapse:separate; border-spacing:0 8px">
+          <thead style="color:#bfc4cf; font-size:.88rem">
+            <tr>
+              <th align="left">Date</th>
+              <th align="left">Type</th>
+              <th align="left">Parties</th>
+              <th align="left">Status</th>
+              <th align="left">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="5" style="padding:.8rem; color:#aaa">Loading...</td></tr>
+          </tbody>
+        </table>
+        
+        <div id="loadMore" style="text-align: center; margin-top: 1rem; display: none;">
+          <button class="btn" onclick="loadMoreContracts()">Load More</button>
+        </div>
+        
+        <!-- Change Password Section -->
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+          <h3 class="text-gradient" style="margin: 0 0 1rem;">Change Password</h3>
+          <div id="passwordForm" style="max-width: 400px;">
+            <div class="form-group">
+              <label class="label">Current Password</label>
+              <input type="password" id="currentPassword" class="input" placeholder="Enter current password">
+            </div>
+            <div class="form-group">
+              <label class="label">New Password</label>
+              <input type="password" id="newPassword" class="input" placeholder="Enter new password">
+            </div>
+            <div class="form-group">
+              <label class="label">Confirm New Password</label>
+              <input type="password" id="confirmPassword" class="input" placeholder="Confirm new password">
+            </div>
+            <button class="btn btn-legal" onclick="changePassword()" style="margin-top: 1rem;">
+              Update Password
+            </button>
+          </div>
+        </div>
+      </section>
+    `, '/profile');
+
+    let currentOffset = 0;
+    let totalContracts = 0;
+    const limit = 10;
+
+    async function loadProfile() {
+      const box = document.getElementById("profileBox");
+      try {
+        console.log("Loading profile...");
+        const res = await fetch("/api/profile", {
+          headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        console.log("Profile data:", data);
+
+        if (data.error) {
+          box.innerHTML = `<span style="color:red">${data.error}</span>`;
+        } else {
+          const user = data;
+          box.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+              <div>
+                <strong style="color: #6366f1;">Name:</strong><br>
+                <span style="color: #fff;">${window.utils.escapeHTML(user.name || "Not provided")}</span>
+              </div>
+              <div>
+                <strong style="color: #6366f1;">Email:</strong><br>
+                <span style="color: #fff;">${window.utils.escapeHTML(user.email || "Not provided")}</span>
+              </div>
+              <div>
+                <strong style="color: #6366f1;">Member since:</strong><br>
+                <span style="color: #fff;">${new Date(user.created_at || Date.now()).toLocaleDateString()}</span>
+              </div>
+              <div>
+                <strong style="color: #6366f1;">Account Type:</strong><br>
+                <span style="color: #fff;">${user.is_admin ? "Administrator" : "User"}</span>
+              </div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error("Profile load error:", error);
+        box.innerHTML = `<span style="color:red">Failed to load profile: ${error.message}</span>`;
+      }
+    }
+
+    async function loadContractStats() {
+      const statsDiv = document.getElementById("contractStats");
+      try {
+        const res = await fetch("/api/contracts/analytics", {
+          headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          statsDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <strong style="color: #6366f1;">Total Contracts:</strong> 
+                <span style="color: #fff;">${data.totalContracts}</span>
+              </div>
+              <div>
+                <strong style="color: #6366f1;">This Month:</strong> 
+                <span style="color: #fff;">${data.stats.filter(s => s.month === new Date().toISOString().slice(0, 7)).reduce((acc, s) => acc + s.count, 0)}</span>
+              </div>
+            </div>
+          `;
+        } else {
+          statsDiv.style.display = 'none';
+        }
+      } catch (error) {
+        console.error("Stats load error:", error);
+        statsDiv.style.display = 'none';
+      }
+    }
+
+    async function loadHistory(offset = 0, append = false) {
+      const body = document.getElementById("historyBody");
+      const loadMoreBtn = document.getElementById("loadMore");
+
+      try {
+        console.log("Loading contracts...");
+        const res = await fetch(`/api/contracts?limit=${limit}&offset=${offset}`, {
+          headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        console.log("Contracts data:", data);
+
+        // Handle the correct response format from server
+        const contracts = data.contracts || [];
+        totalContracts = data.pagination?.total || 0;
+
+        if (contracts.length === 0 && offset === 0) {
+          body.innerHTML = `
+            <tr>
+              <td colspan="5" style="padding:2rem; color:#aaa; text-align: center;">
+                <div style="margin-bottom: 1rem;">📄</div>
+                <div>No contracts yet</div>
+                <div style="margin-top: 0.5rem; font-size: 0.85rem;">
+                  <a href="contracts.html" style="color: #6366f1;">Create your first contract</a>
+                </div>
+              </td>
+            </tr>
+          `;
+          loadMoreBtn.style.display = 'none';
+          return;
+        }
+
+        const contractRows = contracts.map(c => `
+          <tr class="glass-card" style="transition: all 0.2s ease;">
+            <td style="padding:.7rem .8rem">${new Date(c.created_at).toLocaleDateString()}</td>
+            <td style="padding:.7rem .8rem">
+              <span style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem;">
+                ${window.utils.escapeHTML(c.type)}
+              </span>
+            </td>
+            <td style="padding:.7rem .8rem">${window.utils.escapeHTML(c.partyA)} ↔ ${window.utils.escapeHTML(c.partyB)}</td>
+            <td style="padding:.7rem .8rem">
+              <span style="background: ${getStatusColor(c.status)}; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem;">
+                ${window.utils.escapeHTML(c.status || 'Draft')}
+              </span>
+            </td>
+            <td style="padding:.7rem .8rem">
+              <button onclick="viewContract('${window.utils.escapeHTML(c.id)}')" class="btn btn-sm" style="margin-right: 0.5rem;">View</button>
+              <button onclick="editContract('${window.utils.escapeHTML(c.id)}')" class="btn btn-sm btn-secondary">Edit</button>
+            </td>
+          </tr>
+        `).join("");
+
+        if (append) {
+          body.innerHTML += contractRows;
+        } else {
+          body.innerHTML = contractRows;
+        }
+
+        // Show/hide load more button
+        if (offset + limit < totalContracts) {
+          loadMoreBtn.style.display = 'block';
+        } else {
+          loadMoreBtn.style.display = 'none';
+        }
+
+      } catch (error) {
+        console.error("Contract load error:", error);
+        body.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding:.8rem; color:red; text-align: center;">
+              Failed to load contracts: ${error.message}
+            </td>
+          </tr>
+        `;
+        loadMoreBtn.style.display = 'none';
+      }
+    }
+
+    function getStatusColor(status) {
+      switch (status) {
+        case 'active': return 'rgba(34, 197, 94, 0.2); color: #86efac';
+        case 'completed': return 'rgba(59, 130, 246, 0.2); color: #93c5fd';
+        case 'expired': return 'rgba(239, 68, 68, 0.2); color: #fca5a5';
+        default: return 'rgba(156, 163, 175, 0.2); color: #d1d5db';
+      }
+    }
+
+    function loadMoreContracts() {
+      currentOffset += limit;
+      loadHistory(currentOffset, true);
+    }
+
+    function viewContract(contractId) {
+      // Open contract in new tab or modal
+      window.open(`/contracts.html?view=${contractId}`, '_blank');
+    }
+
+    function editContract(contractId) {
+      // Navigate to contract editor
+      window.location.href = `/contracts.html?edit=${contractId}`;
+    }
+
+    async function changePassword() {
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        showNotification('Please fill in all password fields', 'error');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showNotification('New passwords do not match', 'error');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showNotification('Password must be at least 6 characters long', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/change-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({
+            oldPass: currentPassword,
+            newPass: newPassword
+          })
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+          showNotification('Password changed successfully!', 'success');
+          // Clear form
+          document.getElementById('currentPassword').value = '';
+          document.getElementById('newPassword').value = '';
+          document.getElementById('confirmPassword').value = '';
+        } else {
+          showNotification(result.error || 'Failed to change password', 'error');
+        }
+      } catch (error) {
+        console.error('Password change error:', error);
+        showNotification('Failed to change password', 'error');
+      }
+    }
+
+    // Initialize page
+    loadProfile();
+    loadContractStats();
+    loadHistory();
+  </script>
+</body>
+
+</html>

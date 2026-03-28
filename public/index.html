@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>LegalEase · Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <script>
+    if (!localStorage.getItem("token")) {
+      window.location.href = "login.html";
+    }
+  </script>
+  <div id="app"></div>
+
+  <script src="script.js"></script>
+  <script>
+    // Check if user is admin
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const isAdmin = user.is_admin || false;
+    
+    
+
+    renderLayout(`
+      <section class="cards">
+        <div class="glass-card card quarter">
+          <span class="icon big">${Icons.file}</span>
+          <h3 class="text-gradient">Contract Generator</h3>
+          <p class="text-muted small">Create professional contracts with smart templates.</p>
+          <a class="btn btn-legal" href="contracts.html">Generate Contract</a>
+        </div>
+
+        <div class="glass-card card quarter">
+          <span class="icon big">${Icons.search}</span>
+          <h3 class="text-gradient">Case Research</h3>
+          <p class="text-muted small">Search legal precedents and case law instantly.</p>
+          <a class="btn btn-legal" href="research.html">Research Cases</a>
+        </div>
+
+        <div class="glass-card card quarter">
+          <span class="icon big">${Icons.chat}</span>
+          <h3 class="text-gradient">LegalEase AI</h3>
+          <p class="text-muted small">Get instant legal advice from our AI assistant.</p>
+          <a class="btn btn-legal" href="chat.html">Start Chat</a>
+        </div>
+
+        
+      </section>
+      
+      <section class="glass-card" style="padding: 2rem; margin-top: 2rem;">
+        <h2 class="text-gradient" style="margin-top: 0;">Welcome to LegalEase</h2>
+        <p class="text-muted">Your comprehensive legal assistant platform. Generate contracts, research case law, and get AI-powered legal guidance all in one place.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 2rem;">
+          <div style="text-align: center;">
+            <h4>📝 Contract Generation</h4>
+            <p class="text-muted small">Professional contract templates for rent, employment, services, and more.</p>
+          </div>
+          <div style="text-align: center;">
+            <h4>🔍 Case Research</h4>
+            <p class="text-muted small">Search through Indian legal database and precedents instantly.</p>
+          </div>
+          <div style="text-align: center;">
+            <h4>🤖 AI Legal Assistant</h4>
+            <p class="text-muted small">Get instant legal guidance powered by advanced AI technology.</p>
+          </div>
+        </div>
+      </section>
+    `, '/');
+  </script>
+</body>
+</html>

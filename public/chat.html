@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>LegalEase · Satya AI Consultant</title>
+  <link rel="stylesheet" href="style.css"/>
+  <!-- Marked.js for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* ─── Chat container ─── */
+    .chat-container {
+      max-width: 860px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 3rem);
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 1.5rem;
+      background: rgba(255,255,255,0.04);
+      border-radius: 20px 20px 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+    }
+
+    .chat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .chat-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6a5cff, #1ea7ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      box-shadow: 0 0 20px rgba(106, 92, 255, 0.3);
+    }
+
+    .chat-header-info h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      background: linear-gradient(135deg, #6a5cff, #1ea7ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .chat-header-info span {
+      font-size: 0.75rem;
+      color: var(--text-muted, #888);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2ed573;
+      display: inline-block;
+      margin-right: 4px;
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ─── Messages area ─── */
+    .chat-window {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      background: rgba(255,255,255,0.02);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      scroll-behavior: smooth;
+    }
+
+    .chat-window::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-window::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .chat-window::-webkit-scrollbar-thumb {
+      background: rgba(106, 92, 255, 0.3);
+      border-radius: 3px;
+    }
+
+    /* ─── Message bubbles ─── */
+    .chat-msg {
+      max-width: 85%;
+      padding: 0.9rem 1.2rem;
+      border-radius: 18px;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      animation: msg-appear 0.35s ease-out;
+      word-wrap: break-word;
+    }
+
+    @keyframes msg-appear {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-msg.user {
+      background: linear-gradient(135deg, #6a5cff, #1ea7ff);
+      color: #fff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 15px rgba(106, 92, 255, 0.25);
+    }
+
+    .chat-msg.ai {
+      background: rgba(255,255,255,0.06);
+      color: var(--text, #e0e0e0);
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* Markdown inside AI bubbles */
+    .chat-msg.ai h1, .chat-msg.ai h2, .chat-msg.ai h3 {
+      margin: 0.6rem 0 0.3rem;
+      font-size: 1rem;
+      background: linear-gradient(135deg, #6a5cff, #1ea7ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .chat-msg.ai h1 { font-size: 1.1rem; }
+
+    .chat-msg.ai p {
+      margin: 0.4rem 0;
+    }
+
+    .chat-msg.ai ul, .chat-msg.ai ol {
+      margin: 0.4rem 0;
+      padding-left: 1.3rem;
+    }
+
+    .chat-msg.ai li {
+      margin: 0.2rem 0;
+    }
+
+    .chat-msg.ai strong {
+      color: #a5b4fc;
+    }
+
+    .chat-msg.ai em {
+      color: var(--text-muted, #aaa);
+      font-style: italic;
+    }
+
+    .chat-msg.ai code {
+      background: rgba(106, 92, 255, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+
+    .chat-msg.ai blockquote {
+      border-left: 3px solid #6a5cff;
+      margin: 0.5rem 0;
+      padding: 0.3rem 0.8rem;
+      background: rgba(106, 92, 255, 0.06);
+      border-radius: 0 8px 8px 0;
+    }
+
+    /* ─── Sources card ─── */
+    .sources-card {
+      max-width: 85%;
+      align-self: flex-start;
+      background: rgba(106, 92, 255, 0.06);
+      border: 1px solid rgba(106, 92, 255, 0.2);
+      border-radius: 14px;
+      padding: 0.8rem 1rem;
+      font-size: 0.82rem;
+      animation: msg-appear 0.35s ease-out;
+    }
+
+    .sources-card h4 {
+      margin: 0 0 0.5rem;
+      color: #a5b4fc;
+      font-size: 0.85rem;
+    }
+
+    .source-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.4rem;
+      margin: 0.3rem 0;
+    }
+
+    .source-item a {
+      color: #818cf8;
+      text-decoration: none;
+      font-size: 0.8rem;
+      transition: color 0.2s;
+    }
+
+    .source-item a:hover {
+      color: #6a5cff;
+      text-decoration: underline;
+    }
+
+    /* ─── Typing indicator ─── */
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      padding: 0.6rem 1rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .typing-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6a5cff;
+      animation: typing-bounce 1.4s infinite ease-in-out;
+    }
+
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing-bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ─── Input area ─── */
+    .chat-input-area {
+      padding: 1rem 1.2rem;
+      background: rgba(255,255,255,0.04);
+      border-radius: 0 0 20px 20px;
+      border: 1px solid var(--border);
+      border-top: none;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+    }
+
+    .chat-input-row input {
+      flex: 1;
+      padding: 0.8rem 1rem;
+      border-radius: 14px;
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      background: rgba(255,255,255,0.05);
+      color: var(--text, #e0e0e0);
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .chat-input-row input:focus {
+      border-color: #6a5cff;
+      box-shadow: 0 0 0 3px rgba(106, 92, 255, 0.15);
+    }
+
+    .chat-input-row input::placeholder {
+      color: var(--text-muted, #666);
+    }
+
+    .send-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #6a5cff, #1ea7ff);
+      color: #fff;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s, box-shadow 0.3s;
+      box-shadow: 0 4px 15px rgba(106, 92, 255, 0.25);
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 25px rgba(106, 92, 255, 0.4);
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .chat-hint {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-muted, #666);
+      margin-top: 0.5rem;
+    }
+
+    /* ─── Welcome card ─── */
+    .welcome-card {
+      align-self: center;
+      text-align: center;
+      padding: 2rem;
+      max-width: 500px;
+    }
+
+    .welcome-card .avatar-big {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6a5cff, #1ea7ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      margin: 0 auto 1rem;
+      box-shadow: 0 0 30px rgba(106, 92, 255, 0.3);
+    }
+
+    .welcome-card h3 {
+      margin: 0 0 0.4rem;
+      background: linear-gradient(135deg, #6a5cff, #1ea7ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .welcome-card p {
+      color: var(--text-muted, #888);
+      font-size: 0.85rem;
+      margin: 0 0 1.2rem;
+    }
+
+    .suggestion-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .suggestion-chip {
+      padding: 0.45rem 0.9rem;
+      border-radius: 20px;
+      border: 1px solid rgba(106, 92, 255, 0.25);
+      background: rgba(106, 92, 255, 0.06);
+      color: #a5b4fc;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .suggestion-chip:hover {
+      background: rgba(106, 92, 255, 0.15);
+      border-color: #6a5cff;
+      transform: translateY(-1px);
+    }
+
+    /* ─── Toast notification ─── */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      padding: 12px 20px;
+      border-radius: 12px;
+      color: white;
+      font-size: 0.85rem;
+      max-width: 340px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+      animation: toast-in 0.4s ease-out;
+    }
+
+    .toast.success { background: linear-gradient(135deg, #059669, #10b981); }
+    .toast.error   { background: linear-gradient(135deg, #dc2626, #ef4444); }
+    .toast.info    { background: linear-gradient(135deg, #6a5cff, #1ea7ff); }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 640px) {
+      .chat-container { margin: 0.5rem auto; height: calc(100vh - 1rem); }
+      .chat-msg { max-width: 92%; }
+      .suggestion-chips { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <script>
+    if (!localStorage.getItem("token")) {
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <div class="chat-container">
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="chat-avatar">⚖️</div>
+        <div class="chat-header-info">
+          <h2>Satya · AI Legal Consultant</h2>
+          <span><span class="status-dot"></span>Online · Powered by Mistral AI</span>
+        </div>
+      </div>
+      <a href="index.html" class="btn" style="font-size: 0.82rem; padding: 0.5rem 1rem;">← Dashboard</a>
+    </div>
+
+    <!-- Messages -->
+    <div id="chatWindow" class="chat-window">
+      <div class="welcome-card">
+        <div class="avatar-big">⚖️</div>
+        <h3>Namaste! I'm Satya</h3>
+        <p>Your AI Legal Consultant for Indian law. Ask me about property disputes, contracts, consumer rights, employment issues, and more.</p>
+        <div class="suggestion-chips">
+          <span class="suggestion-chip" onclick="useSuggestion(this)">My landlord won't return security deposit</span>
+          <span class="suggestion-chip" onclick="useSuggestion(this)">How to file a consumer complaint?</span>
+          <span class="suggestion-chip" onclick="useSuggestion(this)">Cheque bounce case procedure</span>
+          <span class="suggestion-chip" onclick="useSuggestion(this)">Wrongful termination rights</span>
+          <span class="suggestion-chip" onclick="useSuggestion(this)">How to file an RTI application?</span>
+          <span class="suggestion-chip" onclick="useSuggestion(this)">GST input tax credit refund</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typing indicator -->
+    <div id="typingIndicator" class="typing-indicator" style="display:none; margin: 0 1.5rem;">
+      <div class="typing-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-area">
+      <div class="chat-input-row">
+        <input
+          id="chatInput"
+          type="text"
+          placeholder="Describe your legal issue or question..."
+          autocomplete="off"
+        />
+        <button id="sendBtn" class="send-btn" title="Send message">➤</button>
+      </div>
+      <div class="chat-hint">Press Enter to send · Responses are for informational purposes only</div>
+    </div>
+  </div>
+
+  <script>
+    // ── Configure marked for safe markdown rendering ──
+    if (typeof marked !== 'undefined') {
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+        sanitize: false,
+      });
+    }
+
+    // ── DOM refs ──
+    const chatWindow = document.getElementById('chatWindow');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    // ── Toast notification ──
+    function showToast(message, type = 'info') {
+      document.querySelectorAll('.toast').forEach(t => t.remove());
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    // ── Render markdown safely ──
+    function renderMarkdown(text) {
+      if (typeof marked !== 'undefined' && marked.parse) {
+        return marked.parse(text);
+      }
+      // Fallback: basic formatting
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+        .replace(/^\- (.*$)/gm, '<li>$1</li>')
+        .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
+        .replace(/\n/g, '<br>');
+    }
+
+    // ── Add a user message bubble ──
+    function addUserMessage(text) {
+      // Remove welcome card if present
+      const welcome = chatWindow.querySelector('.welcome-card');
+      if (welcome) welcome.remove();
+
+      const div = document.createElement('div');
+      div.className = 'chat-msg user';
+      div.textContent = text;
+      chatWindow.appendChild(div);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // ── Add an AI message bubble with markdown ──
+    function addAIMessage(markdownText) {
+      const div = document.createElement('div');
+      div.className = 'chat-msg ai';
+      div.innerHTML = renderMarkdown(markdownText);
+      chatWindow.appendChild(div);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // ── Add sources card ──
+    function addSourcesCard(sources) {
+      if (!sources || sources.length === 0) return;
+
+      const card = document.createElement('div');
+      card.className = 'sources-card';
+
+      let html = '<h4>📚 Referenced Sources</h4>';
+      sources.forEach(src => {
+        if (src.type === 'indian_kanoon') {
+          html += `<div class="source-item">
+            <span>📄</span>
+            <div>
+              <strong>${src.title}</strong> <span style="opacity:0.6">(${src.docsource || 'Indian Kanoon'})</span>
+              ${src.url ? `<br><a href="${src.url}" target="_blank" rel="noopener">View on Indian Kanoon →</a>` : ''}
+            </div>
+          </div>`;
+        } else {
+          html += `<div class="source-item">
+            <span>📋</span>
+            <div>
+              <strong>${src.title}</strong>
+              <span style="opacity:0.6"> — ${src.court || ''} ${src.year ? '(' + src.year + ')' : ''}</span>
+              ${src.citation ? `<br><span style="opacity:0.5">Citation: ${src.citation}</span>` : ''}
+            </div>
+          </div>`;
+        }
+      });
+
+      card.innerHTML = html;
+      chatWindow.appendChild(card);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // ── Use suggestion chip ──
+    function useSuggestion(el) {
+      chatInput.value = el.textContent;
+      chatInput.focus();
+      sendMessage();
+    }
+
+    // ── Send message ──
+    async function sendMessage() {
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      addUserMessage(message);
+      chatInput.value = '';
+      chatInput.focus();
+
+      // Show typing indicator
+      typingIndicator.style.display = 'block';
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+      sendBtn.disabled = true;
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await response.json();
+
+        // Hide typing indicator
+        typingIndicator.style.display = 'none';
+
+        if (data.response) {
+          addAIMessage(data.response);
+
+          if (data.sources && data.sources.length > 0) {
+            addSourcesCard(data.sources);
+          }
+        } else {
+          addAIMessage("I'm sorry, I couldn't process your request right now. Please try again in a moment.");
+          showToast('Failed to get response', 'error');
+        }
+
+      } catch (error) {
+        console.error('Chat error:', error);
+        typingIndicator.style.display = 'none';
+        addAIMessage("⚠️ I'm having trouble connecting to the legal database. Please make sure the RAG service is running and try again.");
+        showToast('Connection error', 'error');
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    // ── Event listeners ──
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    chatInput.focus();
+  </script>
+</body>
+</html>

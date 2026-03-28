@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LegalEase · History</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <script>
+    // 🔒 Redirect to login if not authenticated
+    if (!localStorage.getItem("token")) {
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <div id="app"></div>
+  <script src="script.js"></script>
+  <script>
+    renderLayout(`
+      <section class="glass-card" style="padding:16px">
+        <h2 class="text-gradient" style="margin:.2rem 0 .8rem">History</h2>
+        <table id="historyTable" style="width:100%; border-collapse:separate; border-spacing:0 8px">
+          <thead style="color:#bfc4cf; font-size:.88rem">
+            <tr>
+              <th align="left">Date</th>
+              <th align="left">Type</th>
+              <th align="left">Details</th>
+              <th align="left">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="4" style="padding:.8rem; color:#aaa">Loading...</td></tr>
+          </tbody>
+        </table>
+      </section>
+    `, '/history');
+
+    // === Fetch contracts from backend ===
+    async function loadHistory() {
+      const body = document.getElementById("historyBody");
+      try {
+        const res = await fetch("http://localhost:5000/api/contracts", {
+          headers: {
+            "Authorization": "Bearer " + localStorage.getItem("token")
+          }
+        });
+        const data = await res.json();
+        if (data.error) {
+          body.innerHTML = `<tr><td colspan="4" style="padding:.8rem; color:red">${data.error}</td></tr>`;
+          return;
+        }
+
+        if (data.length === 0) {
+          body.innerHTML = `<tr><td colspan="4" style="padding:.8rem; color:#aaa">No contracts yet</td></tr>`;
+          return;
+        }
+
+        body.innerHTML = data.map(c => `
+          <tr class="shadow-soft hover-lift" style="border-radius:12px; margin-bottom:10px;">
+            <td style="padding:1rem; font-weight:600; color:var(--primary);">${window.utils.escapeHTML(c.type)}</td>
+            <td style="padding:1rem;">${window.utils.escapeHTML(c.partyA)} vs ${window.utils.escapeHTML(c.partyB)}</td>
+            <td style="padding:1rem;">
+              <span class="badge" style="background:${c.status === 'final' ? '#2ed573' : '#6a5cff'}; color:white; padding:4px 8px; border-radius:6px; font-size:0.8rem;">
+                ${window.utils.escapeHTML(c.status)}
+              </span>
+            </td>
+            <td style="padding:1rem;">
+              <button class="btn btn-sm" onclick="location.href='contracts.html?id=${c.id}'">View</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+        body.innerHTML = `<tr><td colspan="4" style="padding:.8rem; color:red">Failed to load history</td></tr>`;
+      }
+    }
+
+    // Simple preview function
+    function viewContract(id) {
+      alert("Open contract ID: " + id + "\n(You can extend this to show a detailed contract page)");
+    }
+
+    loadHistory();
+  </script>
+</body>
+
+</html>

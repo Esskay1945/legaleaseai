@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>LegalEase · Contract Generator</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="script.js"></script>
+  <style>
+
+    select.input {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+select.input option {
+  background: #2d2d44 !important;
+  color: white !important;
+}
+
+select.input option:hover {
+  background: #3a3a52 !important;
+}
+
+select.input option:checked {
+  background: linear-gradient(#6a5cff, #6a5cff) !important;
+  background-color: #6a5cff !important;
+}
+
+select.input:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+  select.input:focus {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: var(--primary-1) !important;
+  outline: none;
+}
+    .contract-templates {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .template-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .template-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+    
+    .template-card.selected {
+      border-color: var(--primary-1);
+      box-shadow: 0 0 20px rgba(106,92,255,0.3);
+    }
+    
+    .template-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    
+    .template-description {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    
+    .form-section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      display: none;
+    }
+    
+    .form-section.active {
+      display: block;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+    
+    .preview-section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-top: 2rem;
+      display: none;
+    }
+    
+    .preview-section.active {
+      display: block;
+    }
+    
+    .contract-preview {
+      background: white;
+      color: black;
+      padding: 2rem;
+      border-radius: 8px;
+      font-family: 'Times New Roman', serif;
+      line-height: 1.6;
+      min-height: 500px;
+    }
+
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+      gap: 1rem;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .step.active {
+      background: var(--primary-1);
+      color: white;
+    }
+
+    .step.completed {
+      background: var(--success);
+      color: white;
+    }
+
+    /* Notification animations */
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
+
+    /* Error field highlighting */
+    .input:invalid,
+    .input[style*="border-color: red"] {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+  </style>
+  </style>
+</head>
+<body>
+  <script>
+    if (!localStorage.getItem("token")) {
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <div id="app">
+    <div class="container" style="max-width: 1200px; margin: 2rem auto; padding: 1rem;">
+      <div class="glass-card" style="padding: 2rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+          <h1 class="text-gradient" style="margin: 0;">📄 Contract Generator</h1>
+          <a href="index.html" class="btn">← Back to Dashboard</a>
+        </div>
+
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+          <div class="step" id="step1">
+            <span>1</span>
+            <span>Choose Template</span>
+          </div>
+          <div class="step" id="step2">
+            <span>2</span>
+            <span>Fill Details</span>
+          </div>
+          <div class="step" id="step3">
+            <span>3</span>
+            <span>Preview & Download</span>
+          </div>
+        </div>
+        
+        <!-- Step 1: Template Selection -->
+        <div id="templateStep">
+          <h2 style="margin-bottom: 1rem;">Choose Contract Template</h2>
+          <div class="contract-templates" id="templatesGrid">
+            <!-- Templates will be loaded here -->
+          </div>
+        </div>
+        
+        <!-- Step 2: Contract Form -->
+        <div id="contractForm" class="form-section">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+            <h2 style="margin: 0;">Contract Details</h2>
+            <button class="btn" onclick="goBackToTemplates()">← Change Template</button>
+          </div>
+          
+          <div id="dynamicForm">
+            <!-- Form fields will be generated based on selected template -->
+          </div>
+          
+          <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+            <button class="btn" onclick="goBackToTemplates()">Cancel</button>
+            <button class="btn btn-legal" onclick="generatePreview()">Generate Preview</button>
+          </div>
+        </div>
+        
+        <!-- Step 3: Preview & Download -->
+        <div id="previewSection" class="preview-section">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+            <h2 style="margin: 0;">Contract Preview</h2>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn" onclick="editContract()">← Edit</button>
+              <button class="btn" onclick="downloadPDF()">📄 Download PDF</button>
+              <button class="btn" onclick="copyToClipboard()">📋 Copy Text</button>
+              <button class="btn btn-legal" onclick="saveContract()">💾 Save Contract</button>
+            </div>
+          </div>
+          
+          <div class="contract-preview" id="contractPreview">
+            <!-- Contract preview will be generated here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedTemplate = null;
+    let contractData = {};
+    let availableTemplates = [];
+
+    // Complete contract templates with detailed field configurations
+    function getDefaultTemplates() {
+      return [
+        {
+          id: 'rental_agreement',
+          title: 'Rental Agreement',
+          description: 'Comprehensive rental agreement for residential properties with Indian legal compliance',
+          fields: [
+            { id: 'date', label: 'Agreement Date', type: 'date', required: true },
+            { id: 'city', label: 'City', type: 'text', required: true },
+            { id: 'state', label: 'State', type: 'text', required: true },
+            { id: 'landlordName', label: 'Landlord Full Name', type: 'text', required: true },
+            { id: 'landlordAge', label: 'Landlord Age', type: 'number', required: true },
+            { id: 'landlordAddress', label: 'Landlord Address', type: 'textarea', required: true },
+            { id: 'tenantName', label: 'Tenant Full Name', type: 'text', required: true },
+            { id: 'tenantAge', label: 'Tenant Age', type: 'number', required: true },
+            { id: 'tenantAddress', label: 'Tenant Address', type: 'textarea', required: true },
+            { id: 'propertyAddress', label: 'Property Full Address', type: 'textarea', required: true },
+            { id: 'leaseStartDate', label: 'Lease Start Date', type: 'date', required: true },
+            { id: 'leaseTerm', label: 'Lease Term', type: 'select', options: ['11 months', '1 year', '2 years', '3 years'], required: true },
+            { id: 'monthlyRent', label: 'Monthly Rent (₹)', type: 'number', required: true },
+            { id: 'rentDueDate', label: 'Rent Due Date (Day of Month)', type: 'number', min: 1, max: 31, required: true },
+            { id: 'securityDeposit', label: 'Security Deposit (₹)', type: 'number', required: true },
+            { id: 'noticePeriod', label: 'Termination Notice Period', type: 'select', options: ['1 month', '2 months', '3 months'], required: true },
+            { id: 'specialTerms', label: 'Special Terms & Conditions', type: 'textarea', required: false }
+          ]
+        },
+        {
+          id: 'employment_contract',
+          title: 'Employment Contract',
+          description: 'Standard employment agreement compliant with Indian labor laws',
+          fields: [
+            { id: 'date', label: 'Agreement Date', type: 'date', required: true },
+            { id: 'city', label: 'City', type: 'text', required: true },
+            { id: 'state', label: 'State', type: 'text', required: true },
+            { id: 'companyName', label: 'Company Name', type: 'text', required: true },
+            { id: 'companyAddress', label: 'Company Address', type: 'textarea', required: true },
+            { id: 'employeeName', label: 'Employee Name', type: 'text', required: true },
+            { id: 'employeeAge', label: 'Employee Age', type: 'number', required: true },
+            { id: 'employeeAddress', label: 'Employee Address', type: 'textarea', required: true },
+            { id: 'jobTitle', label: 'Job Title/Designation', type: 'text', required: true },
+            { id: 'startDate', label: 'Employment Start Date', type: 'date', required: true },
+            { id: 'basicSalary', label: 'Basic Salary (₹ per month/year)', type: 'number', required: true },
+            { id: 'allowances', label: 'Allowances/Benefits (HRA, Medical, etc.)', type: 'textarea', required: false },
+            { id: 'salaryDate', label: 'Salary Payment Date', type: 'text', placeholder: 'e.g., Last working day', required: true },
+            { id: 'workingHours', label: 'Working Hours per Week', type: 'number', required: true },
+            { id: 'probationPeriod', label: 'Probation Period (months)', type: 'number', required: true },
+            { id: 'probationNotice', label: 'Notice Period During Probation', type: 'text', required: true },
+            { id: 'regularNotice', label: 'Regular Notice Period', type: 'text', required: true },
+            { id: 'specialTerms', label: 'Special Terms & Conditions', type: 'textarea', required: false }
+          ]
+        },
+        {
+          id: 'service_agreement',
+          title: 'Service Agreement',
+          description: 'Professional service agreement for contractors and service providers',
+          fields: [
+            { id: 'date', label: 'Agreement Date', type: 'date', required: true },
+            { id: 'city', label: 'City', type: 'text', required: true },
+            { id: 'state', label: 'State', type: 'text', required: true },
+            { id: 'clientName', label: 'Client Name/Company', type: 'text', required: true },
+            { id: 'clientAddress', label: 'Client Address', type: 'textarea', required: true },
+            { id: 'serviceProviderName', label: 'Service Provider Name', type: 'text', required: true },
+            { id: 'serviceProviderAge', label: 'Service Provider Age', type: 'number', required: true },
+            { id: 'serviceProviderAddress', label: 'Service Provider Address', type: 'textarea', required: true },
+            { id: 'serviceDescription', label: 'Scope of Services', type: 'textarea', required: true },
+            { id: 'startDate', label: 'Service Start Date', type: 'date', required: true },
+            { id: 'endDate', label: 'Service End Date', type: 'date', required: true },
+            { id: 'totalFee', label: 'Total Fee (₹)', type: 'number', required: true },
+            { id: 'paymentSchedule', label: 'Payment Schedule', type: 'textarea', placeholder: 'e.g., 50% advance, 50% on completion', required: true },
+            { id: 'paymentMode', label: 'Payment Mode', type: 'select', options: ['Bank Transfer', 'Cheque', 'UPI', 'Cash'], required: true },
+            { id: 'noticePeriod', label: 'Termination Notice Period', type: 'text', required: true },
+            { id: 'specialTerms', label: 'Special Terms & Conditions', type: 'textarea', required: false }
+          ]
+        },
+        {
+          id: 'sales_agreement',
+          title: 'Sales Agreement',
+          description: 'Comprehensive sales contract for goods and services',
+          fields: [
+            { id: 'date', label: 'Agreement Date', type: 'date', required: true },
+            { id: 'city', label: 'City', type: 'text', required: true },
+            { id: 'state', label: 'State', type: 'text', required: true },
+            { id: 'sellerName', label: 'Seller Name', type: 'text', required: true },
+            { id: 'sellerAddress', label: 'Seller Address', type: 'textarea', required: true },
+            { id: 'buyerName', label: 'Buyer Name', type: 'text', required: true },
+            { id: 'buyerAddress', label: 'Buyer Address', type: 'textarea', required: true },
+            { id: 'itemDescription', label: 'Description of Goods/Services', type: 'textarea', required: true },
+            { id: 'quantity', label: 'Quantity/Specifications', type: 'text', required: true },
+            { id: 'totalPrice', label: 'Total Price (₹)', type: 'number', required: true },
+            { id: 'taxInclusive', label: 'Tax Treatment', type: 'select', options: ['Inclusive of taxes', 'Exclusive of taxes'], required: true },
+            { id: 'paymentTerms', label: 'Payment Terms', type: 'textarea', required: true },
+            { id: 'paymentMode', label: 'Payment Mode', type: 'select', options: ['Bank Transfer', 'Cheque', 'UPI', 'Cash'], required: true },
+            { id: 'deliveryDate', label: 'Delivery Date/Timeline', type: 'text', required: true },
+            { id: 'deliveryLocation', label: 'Delivery Location', type: 'text', required: true },
+            { id: 'inspectionPeriod', label: 'Inspection Period (days)', type: 'number', required: true },
+            { id: 'warrantyPeriod', label: 'Warranty Period', type: 'text', required: true },
+            { id: 'specialTerms', label: 'Special Terms & Conditions', type: 'textarea', required: false }
+          ]
+        },
+        {
+          id: 'nda',
+          title: 'Non-Disclosure Agreement (NDA)',
+          description: 'Confidentiality agreement to protect sensitive business information',
+          fields: [
+            { id: 'date', label: 'Agreement Date', type: 'date', required: true },
+            { id: 'city', label: 'City', type: 'text', required: true },
+            { id: 'state', label: 'State', type: 'text', required: true },
+            { id: 'disclosingParty', label: 'Disclosing Party Name', type: 'text', required: true },
+            { id: 'disclosingAddress', label: 'Disclosing Party Address', type: 'textarea', required: true },
+            { id: 'receivingParty', label: 'Receiving Party Name', type: 'text', required: true },
+            { id: 'receivingAddress', label: 'Receiving Party Address', type: 'textarea', required: true },
+            { id: 'purpose', label: 'Purpose of Disclosure', type: 'textarea', placeholder: 'e.g., evaluation, collaboration, services', required: true },
+            { id: 'confidentialityDuration', label: 'Confidentiality Duration', type: 'select', options: ['2 years', '3 years', '5 years', 'Indefinite'], required: true },
+            { id: 'jurisdiction', label: 'Jurisdiction (City for Courts)', type: 'text', required: true },
+            { id: 'specialTerms', label: 'Special Terms & Conditions', type: 'textarea', required: false }
+          ]
+        },
+        {
+          id: 'partnership_agreement',
+          title: 'Partnership Agreement',
+          description: 'Business partnership agreement with profit sharing and management terms',
+          fields: [
+            { id: 'date', label: 'Agreement Date', type: 'date', required: true },
+            { id: 'city', label: 'City', type: 'text', required: true },
+            { id: 'state', label: 'State', type: 'text', required: true },
+            { id: 'partner1Name', label: 'Partner 1 Name', type: 'text', required: true },
+            { id: 'partner1Age', label: 'Partner 1 Age', type: 'number', required: true },
+            { id: 'partner1Address', label: 'Partner 1 Address', type: 'textarea', required: true },
+            { id: 'partner2Name', label: 'Partner 2 Name', type: 'text', required: true },
+            { id: 'partner2Age', label: 'Partner 2 Age', type: 'number', required: true },
+            { id: 'partner2Address', label: 'Partner 2 Address', type: 'textarea', required: true },
+            { id: 'partnershipName', label: 'Partnership Name', type: 'text', required: true },
+            { id: 'businessAddress', label: 'Principal Business Address', type: 'textarea', required: true },
+            { id: 'businessPurpose', label: 'Purpose of Partnership', type: 'textarea', required: true },
+            { id: 'partner1Capital', label: 'Partner 1 Capital Contribution (₹)', type: 'number', required: true },
+            { id: 'partner2Capital', label: 'Partner 2 Capital Contribution (₹)', type: 'number', required: true },
+            { id: 'partner1Profit', label: 'Partner 1 Profit Share (%)', type: 'number', max: 100, required: true },
+            { id: 'partner2Profit', label: 'Partner 2 Profit Share (%)', type: 'number', max: 100, required: true },
+            { id: 'managingPartner', label: 'Managing Partner(s)', type: 'text', required: true },
+            { id: 'withdrawalNotice', label: 'Withdrawal Notice Period', type: 'text', required: true },
+            { id: 'specialTerms', label: 'Special Terms & Conditions', type: 'textarea', required: false }
+          ]
+        }
+      ];
+    }
+
+    // Load available contract templates
+    async function loadTemplates() {
+      try {
+        // For now, we'll use the default templates
+        // In a real implementation, this could fetch from server
+        availableTemplates = getDefaultTemplates();
+        displayTemplates();
+        updateStepIndicator(1);
+      } catch (error) {
+        console.error('Error loading templates:', error);
+        showNotification('Error loading templates', 'error');
+      }
+    }
+
+    function displayTemplates() {
+      const grid = document.getElementById('templatesGrid');
+      grid.innerHTML = availableTemplates.map(template => `
+        <div class="template-card" onclick="selectTemplate('${template.id}')">
+          <div class="template-title">${template.title}</div>
+          <div class="template-description">${template.description}</div>
+        </div>
+      `).join('');
+    }
+
+    function selectTemplate(templateId) {
+      selectedTemplate = availableTemplates.find(t => t.id === templateId);
+      if (selectedTemplate) {
+        generateForm();
+        document.getElementById('templateStep').style.display = 'none';
+        document.getElementById('contractForm').classList.add('active');
+        updateStepIndicator(2);
+      }
+    }
+
+    function generateForm() {
+      const form = document.getElementById('dynamicForm');
+      let formHTML = '';
+
+      selectedTemplate.fields.forEach((field, index) => {
+        const isFullWidth = field.type === 'textarea' || field.id === 'specialTerms';
+        
+        if (index === 0 || (index > 0 && selectedTemplate.fields[index - 1].type === 'textarea')) {
+          formHTML += '<div class="form-row">';
+        }
+
+        formHTML += `
+          <div class="form-group ${isFullWidth ? 'full-width' : ''}">
+            <label class="label">${field.label}${field.required ? ' *' : ''}</label>
+        `;
+
+        if (field.type === 'textarea') {
+          formHTML += `<textarea id="${field.id}" class="input" rows="3" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}></textarea>`;
+        } else if (field.type === 'select') {
+          formHTML += `
+            <select id="${field.id}" class="input" ${field.required ? 'required' : ''}>
+              <option value="">Select ${field.label}</option>
+              ${field.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+            </select>
+          `;
+        } else {
+          formHTML += `
+            <input id="${field.id}" class="input" type="${field.type}" 
+              ${field.min ? `min="${field.min}"` : ''} 
+              ${field.max ? `max="${field.max}"` : ''} 
+              placeholder="${field.placeholder || ''}" 
+              ${field.required ? 'required' : ''} />
+          `;
+        }
+
+        formHTML += '</div>';
+
+        if (isFullWidth || (index + 1) % 2 === 0 || index === selectedTemplate.fields.length - 1) {
+          formHTML += '</div>';
+          if (index < selectedTemplate.fields.length - 1) {
+            formHTML += '<div class="form-row">';
+          }
+        }
+      });
+
+      form.innerHTML = formHTML;
+    }
+
+   function generatePreview() {
+  // Collect form data
+  contractData = {};
+  let hasError = false;
+  
+  selectedTemplate.fields.forEach(field => {
+    const element = document.getElementById(field.id);
+    if (element) {
+      contractData[field.id] = element.value;
+      
+      // Check required fields and highlight errors
+      if (field.required && (!element.value || element.value.trim() === '')) {
+        element.style.borderColor = 'red';
+        hasError = true;
+      } else {
+        element.style.borderColor = '';
+      }
+    } else {
+      console.error(`Field element not found: ${field.id}`);
+    }
+  });
+
+  // Validate required fields
+  const requiredFields = selectedTemplate.fields.filter(f => f.required);
+  const missingFields = requiredFields.filter(field => {
+    return !contractData[field.id] || contractData[field.id].trim() === '';
+  });
+  
+  if (missingFields.length > 0) {
+    showNotification(`Please fill in required fields: ${missingFields.map(f => f.label).join(', ')}`, 'error');
+    
+    // Scroll to first missing field
+    const firstMissingElement = document.getElementById(missingFields[0].id);
+    if (firstMissingElement) {
+      firstMissingElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstMissingElement.focus();
+    }
+    return;
+  }
+
+  // Generate contract preview
+  try {
+    const preview = generateContractContent();
+    
+    if (!preview || preview.trim() === '') {
+      throw new Error('Generated preview is empty');
+    }
+    
+    console.log('Generated preview successfully');
+    document.getElementById('contractPreview').innerHTML = preview;
+    
+    document.getElementById('contractForm').classList.remove('active');
+    document.getElementById('previewSection').classList.add('active');
+    updateStepIndicator(3);
+    
+    // Scroll to top of preview
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+  } catch (error) {
+    console.error('Error generating preview:', error);
+    showNotification('Failed to generate contract preview. Please try again.', 'error');
+  }
+}
+    function generateContractContent() {
+      const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      };
+
+      const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          minimumFractionDigits: 0
+        }).format(amount).replace('₹', '₹');
+      };
+
+      switch (selectedTemplate.id) {
+        case 'rental_agreement':
+          return generateRentalAgreement(contractData, formatDate, formatCurrency);
+        case 'employment_contract':
+          return generateEmploymentContract(contractData, formatDate, formatCurrency);
+        case 'service_agreement':
+          return generateServiceAgreement(contractData, formatDate, formatCurrency);
+        case 'sales_agreement':
+          return generateSalesAgreement(contractData, formatDate, formatCurrency);
+        case 'nda':
+          return generateNDAgreement(contractData, formatDate);
+        case 'partnership_agreement':
+          return generatePartnershipAgreement(contractData, formatDate, formatCurrency);
+        default:
+          return '<p>Contract template not found.</p>';
+      }
+    }
+
+    function generateRentalAgreement(data, formatDate, formatCurrency) {
+      return `
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2><u>RENTAL AGREEMENT</u></h2>
+        </div>
+        
+        <p>This Agreement is made on this ${formatDate(data.date)} at ${data.city}, ${data.state}.</p>
+        
+        <p><strong>BETWEEN</strong></p>
+        
+        <p>Mr./Mrs. <strong>${data.landlordName}</strong>, aged ${data.landlordAge} years, residing at ${data.landlordAddress}, hereinafter referred to as the <strong>"Lessor"</strong> (which expression shall, unless repugnant to the context, mean and include his/her heirs, successors, administrators and assigns)</p>
+        
+        <p><strong>AND</strong></p>
+        
+        <p>Mr./Mrs. <strong>${data.tenantName}</strong>, aged ${data.tenantAge} years, residing at ${data.tenantAddress}, hereinafter referred to as the <strong>"Lessee"</strong> (which expression shall, unless repugnant to the context, mean and include his/her heirs, successors, administrators and assigns).</p>
+        
+        <p><strong>WHEREAS</strong> the Lessor agrees to let out and the Lessee agrees to take on rent the premises described below on the following terms and conditions:</p>
+        
+        <ol>
+          <li><strong>Premises:</strong> Residential premises situated at ${data.propertyAddress}.</li>
+          <li><strong>Term:</strong> The tenancy shall commence on ${formatDate(data.leaseStartDate)} and shall continue for a period of ${data.leaseTerm}.</li>
+          <li><strong>Rent:</strong> The monthly rent shall be ${formatCurrency(data.monthlyRent)}, payable in advance on or before the ${data.rentDueDate} of each month.</li>
+          <li><strong>Security Deposit:</strong> The Lessee shall deposit a sum of ${formatCurrency(data.securityDeposit)} as refundable security deposit, to be returned upon termination, subject to deductions for damages/dues.</li>
+          <li><strong>Utilities:</strong> The Lessee shall bear charges for electricity, water, gas, and other utilities.</li>
+          <li><strong>Use:</strong> The premises shall be used for residential purposes only. Sub-letting is prohibited without prior written consent.</li>
+          <li><strong>Maintenance/Repairs:</strong> Routine maintenance shall be the Lessee's responsibility; structural repairs shall be the Lessor's responsibility.</li>
+          <li><strong>Termination:</strong> Either party may terminate this Agreement by giving ${data.noticePeriod} prior written notice.</li>
+          <li><strong>Stamp Duty/Registration:</strong> To be borne as per applicable law of the State.</li>
+          <li><strong>Jurisdiction:</strong> Courts at ${data.city} shall have exclusive jurisdiction.</li>
+          ${data.specialTerms ? `<li><strong>Special Terms:</strong> ${data.specialTerms}</li>` : ''}
+        </ol>
+        
+        <p><strong>IN WITNESS WHEREOF</strong>, both parties have signed this Agreement on the date mentioned above in the presence of witnesses.</p>
+        
+        <div style="margin-top: 4rem;">
+          <div style="display: flex; justify-content: space-between;">
+            <div style="text-align: center;">
+              <p><strong>Lessor:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.landlordName}</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Lessee:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.tenantName}</p>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; margin-top: 3rem;">
+            <div style="text-align: center;">
+              <p><strong>Witness 1:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Witness 2:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function generateEmploymentContract(data, formatDate, formatCurrency) {
+      return `
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2><u>EMPLOYMENT AGREEMENT</u></h2>
+        </div>
+        
+        <p>This Employment Agreement ("Agreement") is made on this ${formatDate(data.date)} at ${data.city}, ${data.state}</p>
+        
+        <p><strong>BETWEEN</strong></p>
+        
+        <p><strong>${data.companyName}</strong>, a company incorporated under the Companies Act, 2013, having its registered office at ${data.companyAddress}, hereinafter referred to as the <strong>"Employer"</strong> (which expression shall, unless repugnant to the context, include its successors and assigns)</p>
+        
+        <p><strong>AND</strong></p>
+        
+        <p>Mr./Mrs. <strong>${data.employeeName}</strong>, aged ${data.employeeAge} years, residing at ${data.employeeAddress}, hereinafter referred to as the <strong>"Employee"</strong>.</p>
+        
+        <p><strong>WHEREAS</strong> the Employer desires to employ the Employee and the Employee agrees to serve the Employer under the terms and conditions set out herein:</p>
+        
+        <ol>
+          <li><strong>Position and Duties:</strong> The Employee shall serve as ${data.jobTitle} and shall perform such duties and responsibilities as may be assigned by the Employer from time to time. The Employee agrees to devote full working time and attention to the business of the Employer.</li>
+          <li><strong>Commencement and Term:</strong> The Employee's employment shall commence on ${formatDate(data.startDate)} and shall continue until terminated by either party as provided herein.</li>
+          <li><strong>Compensation:</strong>
+            <ul>
+              <li>Basic Salary: ${formatCurrency(data.basicSalary)} per month/year.</li>
+              ${data.allowances ? `<li>Allowances / Benefits: ${data.allowances}</li>` : ''}
+              <li>Payment: Salary shall be paid on or before the ${data.salaryDate} of each month.</li>
+            </ul>
+          </li>
+          <li><strong>Working Hours:</strong> The Employee shall work ${data.workingHours} hours per week, Monday to Friday (or as applicable), with leave and holidays as per Employer's policies.</li>
+          <li><strong>Probation:</strong> The Employee shall be on probation for ${data.probationPeriod} months. During probation, either party may terminate the Agreement with ${data.probationNotice} notice.</li>
+          <li><strong>Confidentiality:</strong> The Employee shall not disclose confidential information of the Employer during or after the term of employment.</li>
+          <li><strong>Termination:</strong>
+            <ul>
+              <li>By Employer: ${data.regularNotice} notice or payment in lieu.</li>
+              <li>By Employee: ${data.regularNotice} notice.</li>
+              <li>Termination for Cause: Breach of Agreement, misconduct, or violation of law.</li>
+            </ul>
+          </li>
+          <li><strong>Intellectual Property:</strong> All work, inventions, or materials developed by the Employee during employment related to the business of the Employer shall be the property of the Employer.</li>
+          <li><strong>Governing Law and Jurisdiction:</strong> This Agreement shall be governed by the laws of India. Courts at ${data.city} shall have exclusive jurisdiction.</li>
+          ${data.specialTerms ? `<li><strong>Special Terms:</strong> ${data.specialTerms}</li>` : ''}
+        </ol>
+        
+        <p><strong>IN WITNESS WHEREOF</strong>, the parties have executed this Agreement on the date first above written.</p>
+        
+        <div style="margin-top: 4rem;">
+          <div style="display: flex; justify-content: space-between;">
+            <div style="text-align: center;">
+              <p><strong>Employer:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.companyName}</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Employee:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.employeeName}</p>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; margin-top: 3rem;">
+            <div style="text-align: center;">
+              <p><strong>Witness 1:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Witness 2:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function generateServiceAgreement(data, formatDate, formatCurrency) {
+      return `
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2><u>SERVICE AGREEMENT</u></h2>
+        </div>
+        
+        <p>This Service Agreement ("Agreement") is made on this ${formatDate(data.date)} at ${data.city}, ${data.state}</p>
+        
+        <p><strong>BETWEEN</strong></p>
+        
+        <p><strong>${data.clientName}</strong>, having its office/residence at ${data.clientAddress}, hereinafter referred to as the <strong>"Client"</strong></p>
+        
+        <p><strong>AND</strong></p>
+        
+        <p><strong>${data.serviceProviderName}</strong>, aged ${data.serviceProviderAge} years, residing at ${data.serviceProviderAddress}, hereinafter referred to as the <strong>"Service Provider"</strong></p>
+        
+        <p><strong>WHEREAS</strong> the Client desires to engage the Service Provider to perform certain professional services, and the Service Provider agrees to provide such services under the terms and conditions set out herein:</p>
+        
+        <ol>
+          <li><strong>Scope of Services:</strong> The Service Provider shall provide the following services: ${data.serviceDescription}. Services shall be performed professionally and in accordance with applicable standards.</li>
+          <li><strong>Term of Agreement:</strong> This Agreement shall commence on ${formatDate(data.startDate)} and shall continue until ${formatDate(data.endDate)}, unless terminated earlier according to the terms herein.</li>
+          <li><strong>Fees and Payment:</strong>
+            <ul>
+              <li>Total Fee: ${formatCurrency(data.totalFee)} (exclusive of taxes, if applicable)</li>
+              <li>Payment Schedule: ${data.paymentSchedule}</li>
+              <li>Mode of Payment: ${data.paymentMode}</li>
+            </ul>
+          </li>
+          <li><strong>Confidentiality:</strong> The Service Provider shall maintain the confidentiality of all Client information and shall not disclose such information to any third party without written consent.</li>
+          <li><strong>Intellectual Property:</strong> All deliverables, reports, designs, or inventions created during this engagement shall be the property of the Client, unless otherwise agreed in writing.</li>
+          <li><strong>Termination:</strong> Either party may terminate this Agreement by giving ${data.noticePeriod} written notice. Termination for Cause: Material breach, gross negligence, or misconduct.</li>
+          <li><strong>Indemnity and Liability:</strong> The Service Provider agrees to indemnify the Client against any claims, losses, or damages arising out of the Service Provider's negligence or breach of this Agreement.</li>
+          <li><strong>Force Majeure:</strong> Neither party shall be liable for failure or delay caused by events beyond their reasonable control, including natural disasters, government restrictions, strikes, or other unforeseen events.</li>
+          <li><strong>Governing Law and Jurisdiction:</strong> This Agreement shall be governed by and construed in accordance with the laws of India. Courts at ${data.city} shall have exclusive jurisdiction.</li>
+          ${data.specialTerms ? `<li><strong>Special Terms:</strong> ${data.specialTerms}</li>` : ''}
+        </ol>
+        
+        <p><strong>IN WITNESS WHEREOF</strong>, the parties have executed this Agreement on the date first above written.</p>
+        
+        <div style="margin-top: 4rem;">
+          <div style="display: flex; justify-content: space-between;">
+            <div style="text-align: center;">
+              <p><strong>Client:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.clientName}</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Service Provider:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.serviceProviderName}</p>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; margin-top: 3rem;">
+            <div style="text-align: center;">
+              <p><strong>Witness 1:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Witness 2:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function generateSalesAgreement(data, formatDate, formatCurrency) {
+      return `
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2><u>SALES AGREEMENT</u></h2>
+        </div>
+        
+        <p>This Sales Agreement ("Agreement") is made on this ${formatDate(data.date)} at ${data.city}, ${data.state}</p>
+        
+        <p><strong>BETWEEN</strong></p>
+        
+        <p><strong>${data.sellerName}</strong>, having its registered office at ${data.sellerAddress}, hereinafter referred to as the <strong>"Seller"</strong></p>
+        
+        <p><strong>AND</strong></p>
+        
+        <p><strong>${data.buyerName}</strong>, having its registered office at ${data.buyerAddress}, hereinafter referred to as the <strong>"Buyer"</strong></p>
+        
+        <p><strong>WHEREAS</strong> the Seller agrees to sell and the Buyer agrees to purchase the goods/services under the terms and conditions set out herein:</p>
+        
+        <ol>
+          <li><strong>Description of Goods / Services:</strong> ${data.itemDescription}. Quantity/Specifications: ${data.quantity}.</li>
+          <li><strong>Price and Payment Terms:</strong>
+            <ul>
+              <li>Total Price: ${formatCurrency(data.totalPrice)} (${data.taxInclusive})</li>
+              <li>Payment Terms: ${data.paymentTerms}</li>
+              <li>Mode of Payment: ${data.paymentMode}</li>
+            </ul>
+          </li>
+          <li><strong>Delivery / Performance:</strong>
+            <ul>
+              <li>Delivery Date / Timeline: ${data.deliveryDate}</li>
+              <li>Delivery Location: ${data.deliveryLocation}</li>
+              <li>Risk and Title: Risk and title shall pass to the Buyer upon delivery</li>
+            </ul>
+          </li>
+          <li><strong>Inspection and Acceptance:</strong> Buyer shall inspect the goods/services within ${data.inspectionPeriod} days. Acceptance / Rejection procedures for defective / non-conforming goods as per applicable law.</li>
+          <li><strong>Warranty / Guarantee:</strong> Goods/services shall conform to the specifications and shall be free from defects for ${data.warrantyPeriod}. Remedies in case of defects: Repair / Replacement / Refund.</li>
+          <li><strong>Returns / Refunds:</strong> As per terms agreed and applicable consumer protection laws.</li>
+          <li><strong>Confidentiality:</strong> Both parties shall maintain confidentiality of any sensitive information shared under this Agreement.</li>
+          <li><strong>Indemnity / Liability:</strong> Each party shall indemnify the other for losses arising due to negligence, breach, or misrepresentation.</li>
+          <li><strong>Force Majeure:</strong> Neither party shall be liable for delays or failures caused by events beyond their reasonable control.</li>
+          <li><strong>Governing Law and Jurisdiction:</strong> This Agreement shall be governed by the laws of India. Courts at ${data.city} shall have exclusive jurisdiction.</li>
+          ${data.specialTerms ? `<li><strong>Special Terms:</strong> ${data.specialTerms}</li>` : ''}
+        </ol>
+        
+        <p><strong>IN WITNESS WHEREOF</strong>, the parties have executed this Agreement on the date first above written.</p>
+        
+        <div style="margin-top: 4rem;">
+          <div style="display: flex; justify-content: space-between;">
+            <div style="text-align: center;">
+              <p><strong>Seller:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.sellerName}</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Buyer:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.buyerName}</p>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; margin-top: 3rem;">
+            <div style="text-align: center;">
+              <p><strong>Witness 1:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Witness 2:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function generateNDAgreement(data, formatDate) {
+      return `
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2><u>NON-DISCLOSURE AGREEMENT</u></h2>
+        </div>
+        
+        <p>This Non-Disclosure Agreement ("Agreement") is made on this ${formatDate(data.date)} at ${data.city}, ${data.state}</p>
+        
+        <p><strong>BETWEEN</strong></p>
+        
+        <p><strong>${data.disclosingParty}</strong>, having its office/residence at ${data.disclosingAddress}, hereinafter referred to as the <strong>"Disclosing Party"</strong></p>
+        
+        <p><strong>AND</strong></p>
+        
+        <p><strong>${data.receivingParty}</strong>, having its office/residence at ${data.receivingAddress}, hereinafter referred to as the <strong>"Receiving Party"</strong></p>
+        
+        <p><strong>WHEREAS</strong> the Disclosing Party possesses certain confidential and proprietary information and desires to disclose it to the Receiving Party for ${data.purpose}, and the Receiving Party agrees to receive such information under the terms of this Agreement:</p>
+        
+        <ol>
+          <li><strong>Definition of Confidential Information:</strong> "Confidential Information" includes all information disclosed by the Disclosing Party to the Receiving Party, whether orally, in writing, or electronically, including but not limited to business plans, technical data, financial information, customer lists, trade secrets, and other proprietary information.</li>
+          <li><strong>Obligations of Receiving Party:</strong>
+            <ul>
+              <li>Maintain the confidentiality of the Confidential Information</li>
+              <li>Not disclose Confidential Information to any third party without prior written consent</li>
+              <li>Use Confidential Information solely for the Purpose described above</li>
+            </ul>
+          </li>
+          <li><strong>Exclusions from Confidential Information:</strong> Confidential Information does not include information that:
+            <ul>
+              <li>Was publicly known at the time of disclosure</li>
+              <li>Becomes publicly known through no fault of the Receiving Party</li>
+              <li>Is lawfully obtained by the Receiving Party from a third party without restriction</li>
+              <li>Was independently developed by the Receiving Party without using the Disclosing Party's information</li>
+            </ul>
+          </li>
+          <li><strong>Term of Confidentiality:</strong> The obligations under this Agreement shall remain in effect for ${data.confidentialityDuration} from the date of disclosure or until such information becomes public as per the exclusions above.</li>
+          <li><strong>Return or Destruction of Information:</strong> Upon termination of discussions or upon request by the Disclosing Party, the Receiving Party shall promptly return or destroy all materials containing Confidential Information.</li>
+          <li><strong>No License or Ownership:</strong> Nothing in this Agreement grants the Receiving Party any rights or license to the Disclosing Party's intellectual property or confidential information, except as expressly stated herein.</li>
+          <li><strong>Remedies:</strong> The Receiving Party acknowledges that unauthorized disclosure may cause irreparable harm. The Disclosing Party shall be entitled to seek injunctive relief, in addition to any other legal remedies.</li>
+          <li><strong>Governing Law and Jurisdiction:</strong> This Agreement shall be governed by the laws of India. Courts at ${data.jurisdiction} shall have exclusive jurisdiction.</li>
+          ${data.specialTerms ? `<li><strong>Special Terms:</strong> ${data.specialTerms}</li>` : ''}
+        </ol>
+        
+        <p><strong>IN WITNESS WHEREOF</strong>, the parties have executed this Agreement on the date first above written.</p>
+        
+        <div style="margin-top: 4rem;">
+          <div style="display: flex; justify-content: space-between;">
+            <div style="text-align: center;">
+              <p><strong>Disclosing Party:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.disclosingParty}</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Receiving Party:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.receivingParty}</p>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; margin-top: 3rem;">
+            <div style="text-align: center;">
+              <p><strong>Witness 1:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Witness 2:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function generatePartnershipAgreement(data, formatDate, formatCurrency) {
+      return `
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2><u>PARTNERSHIP AGREEMENT</u></h2>
+        </div>
+        
+        <p>This Partnership Agreement ("Agreement") is made on this ${formatDate(data.date)} at ${data.city}, ${data.state}</p>
+        
+        <p><strong>BETWEEN</strong></p>
+        
+        <p>1. <strong>${data.partner1Name}</strong>, aged ${data.partner1Age} years, residing at ${data.partner1Address}</p>
+        <p>2. <strong>${data.partner2Name}</strong>, aged ${data.partner2Age} years, residing at ${data.partner2Address}</p>
+        
+        <p>Collectively referred to as the <strong>"Partners"</strong>.</p>
+        
+        <p><strong>WHEREAS</strong> the Partners wish to enter into a partnership to carry on the business of ${data.businessPurpose} under the terms and conditions set out herein:</p>
+        
+        <ol>
+          <li><strong>Name and Place of Business:</strong> The partnership shall operate under the name <strong>${data.partnershipName}</strong> and its principal office shall be located at ${data.businessAddress}.</li>
+          <li><strong>Purpose of Partnership:</strong> The purpose of the partnership is to ${data.businessPurpose}.</li>
+          <li><strong>Capital Contributions:</strong> Each Partner shall contribute capital as follows:
+            <ul>
+              <li>${data.partner1Name}: ${formatCurrency(data.partner1Capital)}</li>
+              <li>${data.partner2Name}: ${formatCurrency(data.partner2Capital)}</li>
+            </ul>
+            Additional capital contributions, if required, shall be made as mutually agreed in writing.
+          </li>
+          <li><strong>Profit and Loss Sharing:</strong> Profits and losses shall be shared among the Partners in the following ratio:
+            <ul>
+              <li>${data.partner1Name}: ${data.partner1Profit}%</li>
+              <li>${data.partner2Name}: ${data.partner2Profit}%</li>
+            </ul>
+          </li>
+          <li><strong>Management and Decision-Making:</strong> The day-to-day management shall be conducted by ${data.managingPartner}. Major decisions shall require consent of all Partners. Voting rights shall be proportional to profit-sharing ratios unless otherwise agreed.</li>
+          <li><strong>Admission of New Partners:</strong> No new partner shall be admitted without the unanimous written consent of all existing Partners.</li>
+          <li><strong>Withdrawal / Retirement / Death of a Partner:</strong> Any Partner wishing to withdraw shall give ${data.withdrawalNotice} written notice. In case of death, the deceased Partner's share shall be handled as per buyout terms or legal heirs' agreement.</li>
+          <li><strong>Dissolution:</strong> The partnership may be dissolved by mutual consent or in accordance with applicable law. Upon dissolution, assets shall be liquidated and liabilities settled, and remaining profits distributed according to the profit-sharing ratio.</li>
+          <li><strong>Confidentiality and Non-Competition:</strong> Partners shall not disclose sensitive business information or engage in competing business without prior written consent of other Partners.</li>
+          <li><strong>Dispute Resolution:</strong> Disputes shall first be attempted to resolve amicably. Failing which, disputes shall be referred to arbitration under the Indian Arbitration and Conciliation Act, 1996.</li>
+          <li><strong>Governing Law:</strong> This Agreement shall be governed by and construed in accordance with the laws of India.</li>
+          ${data.specialTerms ? `<li><strong>Special Terms:</strong> ${data.specialTerms}</li>` : ''}
+        </ol>
+        
+        <p><strong>IN WITNESS WHEREOF</strong>, the Partners have executed this Agreement on the date first above written.</p>
+        
+        <div style="margin-top: 4rem;">
+          <div style="display: flex; justify-content: space-between;">
+            <div style="text-align: center;">
+              <p><strong>Partner 1:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.partner1Name}</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Partner 2:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+              <p>${data.partner2Name}</p>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; margin-top: 3rem;">
+            <div style="text-align: center;">
+              <p><strong>Witness 1:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+            <div style="text-align: center;">
+              <p><strong>Witness 2:</strong></p>
+              <br><br>
+              <p>_________________________</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateStepIndicator(currentStep) {
+      // Remove all classes first
+      document.querySelectorAll('.step').forEach(step => {
+        step.classList.remove('active', 'completed');
+      });
+
+      // Set current step as active
+      document.getElementById(`step${currentStep}`).classList.add('active');
+
+      // Set previous steps as completed
+      for (let i = 1; i < currentStep; i++) {
+        document.getElementById(`step${i}`).classList.add('completed');
+      }
+    }
+
+    function goBackToTemplates() {
+      document.getElementById('contractForm').classList.remove('active');
+      document.getElementById('previewSection').classList.remove('active');
+      document.getElementById('templateStep').style.display = 'block';
+      selectedTemplate = null;
+      contractData = {};
+      updateStepIndicator(1);
+    }
+
+    function editContract() {
+      document.getElementById('previewSection').classList.remove('active');
+      document.getElementById('contractForm').classList.add('active');
+      updateStepIndicator(2);
+    }
+
+    function copyToClipboard() {
+      const content = document.getElementById('contractPreview').innerText;
+      navigator.clipboard.writeText(content).then(() => {
+        showNotification('Contract copied to clipboard!', 'success');
+      }).catch(() => {
+        showNotification('Failed to copy to clipboard', 'error');
+      });
+    }
+
+    async function saveContract() {
+      try {
+        const response = await fetch('/api/contracts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            type: selectedTemplate.title,
+            jurisdiction: contractData.state || 'India',
+            partyA: contractData.landlordName || contractData.companyName || contractData.clientName || contractData.sellerName || contractData.disclosingParty || contractData.partner1Name || 'Party A',
+            partyB: contractData.tenantName || contractData.employeeName || contractData.serviceProviderName || contractData.buyerName || contractData.receivingParty || contractData.partner2Name || 'Party B',
+            startDate: contractData.leaseStartDate || contractData.startDate || contractData.date,
+            endDate: contractData.leaseEndDate || contractData.endDate || '',
+            terms: JSON.stringify(contractData)
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          showNotification('Contract saved successfully!', 'success');
+        } else {
+          showNotification('Failed to save contract', 'error');
+        }
+      } catch (error) {
+        console.error('Error saving contract:', error);
+        showNotification('Error saving contract', 'error');
+      }
+    }
+
+    function downloadPDF() {
+      const content = document.getElementById('contractPreview').innerHTML;
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>${selectedTemplate.title}</title>
+          <style>
+            body { 
+              font-family: 'Times New Roman', serif; 
+              margin: 2cm; 
+              line-height: 1.6; 
+              color: #000;
+              background: white;
+            }
+            h2 { text-align: center; margin-bottom: 2rem; }
+            ol { padding-left: 1.5rem; }
+            li { margin-bottom: 0.8rem; }
+            ul { margin: 0.5rem 0; }
+            p { margin-bottom: 1rem; }
+            strong { font-weight: bold; }
+            @media print {
+              body { margin: 1cm; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>${content}</body>
+        </html>
+      `);
+      printWindow.document.close();
+      
+      // Wait for content to load then print
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
+
+    function showNotification(message, type = 'info') {
+  // Create notification element if it doesn't exist
+  let notification = document.getElementById('customNotification');
+  
+  if (!notification) {
+    notification = document.createElement('div');
+    notification.id = 'customNotification';
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 10000;
+      max-width: 400px;
+      animation: slideIn 0.3s ease-out;
+      font-size: 14px;
+      font-weight: 500;
+    `;
+    document.body.appendChild(notification);
+  }
+
+  // Set colors based on type
+  const colors = {
+    success: { bg: '#10b981', text: '#ffffff' },
+    error: { bg: '#ef4444', text: '#ffffff' },
+    info: { bg: '#3b82f6', text: '#ffffff' },
+    warning: { bg: '#f59e0b', text: '#ffffff' }
+  };
+
+  const color = colors[type] || colors.info;
+  notification.style.backgroundColor = color.bg;
+  notification.style.color = color.text;
+  notification.textContent = message;
+  notification.style.display = 'block';
+
+  // Auto-hide after 4 seconds
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => {
+      notification.style.display = 'none';
+    }, 300);
+  }, 4000);
+}
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      loadTemplates();
+    });
+
+    // Auto-save form data as user types (optional enhancement)
+    function setupAutoSave() {
+      if (selectedTemplate) {
+        selectedTemplate.fields.forEach(field => {
+          const element = document.getElementById(field.id);
+          if (element) {
+            element.addEventListener('input', () => {
+              const savedData = JSON.parse(localStorage.getItem(`contract_draft_${selectedTemplate.id}`) || '{}');
+              savedData[field.id] = element.value;
+              localStorage.setItem(`contract_draft_${selectedTemplate.id}`, JSON.stringify(savedData));
+            });
+          }
+        });
+      }
+    }
+
+    // Load saved draft data (optional enhancement)
+    function loadDraftData() {
+      if (selectedTemplate) {
+        const savedData = JSON.parse(localStorage.getItem(`contract_draft_${selectedTemplate.id}`) || '{}');
+        selectedTemplate.fields.forEach(field => {
+          const element = document.getElementById(field.id);
+          if (element && savedData[field.id]) {
+            element.value = savedData[field.id];
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>

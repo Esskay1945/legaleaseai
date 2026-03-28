@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>LegalEase · Case Research</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="script.js"></script>
+  <style>
+    .search-form {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    
+    .results-container {
+      margin-top: 2rem;
+    }
+    
+    .case-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .case-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+    
+    .case-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    
+    .case-meta {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    
+    .case-summary {
+      line-height: 1.5;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+    
+    .case-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .source-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+    
+    .source-indian-kanoon {
+      background: linear-gradient(135deg, #2ed573, #1e90ff);
+      color: white;
+    }
+    
+    .source-local {
+      background: rgba(255,255,255,0.15);
+      color: var(--muted);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.7);
+    }
+    
+    .modal-content {
+      position: relative;
+      margin: 5% auto;
+      padding: 2rem;
+      width: 90%;
+      max-width: 700px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .close-modal {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--muted);
+      transition: color 0.2s ease;
+    }
+    
+    .close-modal:hover {
+      color: var(--text);
+    }
+    
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      max-width: 350px;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    .notification.success { 
+      background: linear-gradient(135deg, #2ed573, #1e90ff); 
+    }
+    .notification.error { 
+      background: linear-gradient(135deg, #ff4757, #ff3742); 
+    }
+    .notification.info { 
+      background: linear-gradient(135deg, #6a5cff, #1ea7ff); 
+    }
+    
+    @keyframes slideIn {
+      from { 
+        transform: translateX(100%); 
+        opacity: 0; 
+      }
+      to { 
+        transform: translateX(0); 
+        opacity: 1; 
+      }
+    }
+    
+    /* Fix dropdown styling */
+    .select {
+      background: var(--bg-soft) !important;
+      color: var(--text) !important;
+    }
+    .select option {
+      background: var(--bg-soft) !important;
+      color: var(--text) !important;
+      padding: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .case-actions {
+        flex-direction: column;
+      }
+      
+      .modal-content {
+        margin: 2% auto;
+        width: 95%;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <script>
+    if (!localStorage.getItem("token")) {
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <div class="container" style="max-width: 1000px; margin: 2rem auto; padding: 1rem;">
+    <div class="glass-card" style="padding: 2rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <h1 class="text-gradient" style="margin: 0;">Case Research</h1>
+        <a href="index.html" class="btn">← Back to Dashboard</a>
+      </div>
+      
+      <div class="search-form">
+        <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--text);">Search Legal Cases</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="label" for="keywords">Keywords</label>
+            <input 
+              id="keywords" 
+              class="input" 
+              placeholder="e.g., property dispute, contract breach, employment"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="caseNumber">Case Number (Optional)</label>
+            <input 
+              id="caseNumber" 
+              class="input" 
+              placeholder="e.g., 2023 SC 123"
+            />
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="label" for="caseType">Case Type</label>
+            <select id="caseType" class="select">
+              <option value="">All Types</option>
+              <option value="civil">Civil</option>
+              <option value="criminal">Criminal</option>
+              <option value="constitutional">Constitutional</option>
+              <option value="commercial">Commercial</option>
+              <option value="property">Property</option>
+              <option value="employment">Employment</option>
+              <option value="family">Family</option>
+              <option value="tax">Tax</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="courtSelect">Court</label>
+            <select id="courtSelect" class="select">
+              <option value="">All Courts</option>
+              <option value="supreme court">Supreme Court</option>
+              <option value="delhi high court">Delhi High Court</option>
+              <option value="bombay high court">Bombay High Court</option>
+              <option value="calcutta high court">Calcutta High Court</option>
+              <option value="madras high court">Madras High Court</option>
+              <option value="karnataka high court">Karnataka High Court</option>
+              <option value="gujarat high court">Gujarat High Court</option>
+              <option value="rajasthan high court">Rajasthan High Court</option>
+              <option value="punjab haryana high court">Punjab & Haryana High Court</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="label" for="fromDate">From Date</label>
+            <input id="fromDate" class="input" type="date"/>
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="toDate">To Date</label>
+            <input id="toDate" class="input" type="date"/>
+          </div>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <button id="searchBtn" class="btn btn-legal" style="padding: 0.8rem 2rem;">
+          Search Cases
+        </button>
+        <button id="clearBtn" class="btn" style="margin-left: 0.5rem;">
+          Clear All
+        </button>
+      </div>
+      
+      <div id="loadingIndicator" class="loading" style="display: none;">
+        Searching legal database...
+      </div>
+      
+      <div id="resultsContainer" class="results-container"></div>
+    </div>
+  </div>
+
+  <!-- Case Details Modal -->
+  <div id="caseModal" class="modal">
+    <div class="modal-content glass-card">
+      <span class="close-modal" onclick="closeModal()">&times;</span>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    // DOM references
+    const searchBtn = document.getElementById('searchBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    // Modal functions
+    function openModal(caseData) {
+      const modal = document.getElementById('caseModal');
+      const modalBody = document.getElementById('modalBody');
+      
+      modalBody.innerHTML = `
+        <h2 class="text-gradient">${caseData.title}</h2>
+        <div style="margin: 1rem 0;">
+          <p><strong>Court:</strong> ${caseData.court || 'Unknown'}</p>
+          <p><strong>Year:</strong> ${caseData.year || 'Unknown'}</p>
+          <p><strong>Citation:</strong> ${caseData.citation || 'N/A'}</p>
+          <p><strong>Type:</strong> ${caseData.type || 'Unknown'}</p>
+          <p><strong>Source:</strong> 
+            <span class="source-badge ${caseData.source_type === 'indian_kanoon' ? 'source-indian-kanoon' : 'source-local'}">
+              ${caseData.source_type === 'indian_kanoon' ? 'Indian Kanoon' : 'Local Database'}
+            </span>
+          </p>
+        </div>
+        <div style="margin: 1.5rem 0;">
+          <h3>Case Summary:</h3>
+          <p style="line-height: 1.6;">${caseData.summary || 'No summary available'}</p>
+        </div>
+        ${caseData.url ? `
+          <div style="margin-top: 1.5rem;">
+            <a href="${caseData.url}" target="_blank" class="btn btn-legal">
+              View Full Case
+            </a>
+          </div>
+        ` : ''}
+      `;
+      
+      modal.style.display = 'block';
+    }
+
+    function closeModal() {
+      document.getElementById('caseModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+      const modal = document.getElementById('caseModal');
+      if (event.target === modal) {
+        closeModal();
+      }
+    }
+
+    // Test connection function
+    async function testConnection() {
+      testBtn.disabled = true;
+      testBtn.textContent = 'Testing...';
+      
+      try {
+        // Test backend connection
+        const backendResponse = await fetch('/api/profile', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (backendResponse.ok) {
+          showNotification('Backend connection: OK', 'success');
+        } else {
+          showNotification('Backend connection: Failed', 'error');
+        }
+        
+        // Test search endpoint with simple query
+        const searchResponse = await fetch('/api/search?q=test&limit=1');
+        const searchText = await searchResponse.text();
+        
+        console.log('Search test response:', searchText.substring(0, 200));
+        
+        if (searchResponse.ok) {
+          try {
+            JSON.parse(searchText);
+            showNotification('Search API connection: OK', 'success');
+          } catch (e) {
+            showNotification('Search API returns HTML - Check RAG service', 'error');
+            console.error('RAG service seems to be down or misconfigured');
+          }
+        } else {
+          showNotification('Search API connection: Failed', 'error');
+        }
+        
+      } catch (error) {
+        console.error('Connection test failed:', error);
+        showNotification('Connection test failed: ' + error.message, 'error');
+      } finally {
+        testBtn.disabled = false;
+        testBtn.textContent = 'Test Connection';
+      }
+    }
+
+    // Search functionality
+    async function performSearch() {
+      const caseNumber = document.getElementById('caseNumber').value.trim();
+      const caseType = document.getElementById('caseType').value;
+      const court = document.getElementById('courtSelect').value;
+      const keywords = document.getElementById('keywords').value.trim();
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+
+      // Build search query
+      const queryParts = [];
+      if (keywords) queryParts.push(keywords);
+      if (caseType) queryParts.push(caseType);
+      if (court) queryParts.push(court);
+      if (caseNumber) queryParts.push(caseNumber);
+
+      if (queryParts.length === 0) {
+        showNotification('Please enter at least one search criteria', 'error');
+        return;
+      }
+
+      const searchQuery = queryParts.join(' ');
+
+      // Show loading state
+      loadingIndicator.style.display = 'block';
+      resultsContainer.innerHTML = '';
+      searchBtn.disabled = true;
+      searchBtn.textContent = 'Searching...';
+
+      try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&limit=20`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+        
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          console.error('Response was:', responseText.substring(0, 200));
+          throw new Error('Server returned invalid response. Please check if both backend and RAG services are running.');
+        }
+        
+        console.log('Search response:', data);
+
+        // Combine results from both sources
+        let allCases = [];
+        
+        // Add Indian Kanoon cases (priority)
+        if (data.indian_kanoon_cases && data.indian_kanoon_cases.length > 0) {
+          allCases = [...data.indian_kanoon_cases.map(c => ({
+            ...c,
+            source_type: 'indian_kanoon',
+            priority: 1,
+            court: c.docsource || 'Indian Legal Database',
+            year: 'Live Case',
+            summary: c.headline || c.summary || 'Case summary not available'
+          }))];
+        }
+        
+        // Add local cases as supplement
+        if (data.local_cases && data.local_cases.length > 0) {
+          allCases = [...allCases, ...data.local_cases.map(c => ({
+            ...c,
+            source_type: 'local_database',
+            priority: 2,
+            summary: c.facts || c.judgment || 'Case details not available'
+          }))];
+        }
+
+        // If no results, try a broader search
+        if (allCases.length === 0) {
+          console.log('No results found, trying broader search...');
+          const broadQuery = keywords || caseType || 'legal cases';
+          try {
+            const broadResponse = await fetch(`/api/search?q=${encodeURIComponent(broadQuery)}&limit=15`);
+            if (broadResponse.ok) {
+              const broadText = await broadResponse.text();
+              const broadData = JSON.parse(broadText);
+              console.log('Broad search response:', broadData);
+              
+              if (broadData.indian_kanoon_cases) {
+                allCases = [...broadData.indian_kanoon_cases.map(c => ({
+                  ...c,
+                  source_type: 'indian_kanoon',
+                  priority: 1,
+                  court: c.docsource || 'Indian Legal Database',
+                  year: 'Live Case',
+                  summary: c.headline || 'Case summary not available'
+                }))];
+              }
+              if (broadData.local_cases) {
+                allCases = [...allCases, ...broadData.local_cases.map(c => ({
+                  ...c,
+                  source_type: 'local_database',
+                  priority: 2,
+                  summary: c.facts || c.judgment || 'Case details not available'
+                }))];
+              }
+            }
+          } catch (broadError) {
+            console.error('Broad search also failed:', broadError);
+          }
+        }
+
+        displayResults(allCases, searchQuery, data);
+        
+        const totalResults = allCases.length;
+        const ikResults = allCases.filter(c => c.source_type === 'indian_kanoon').length;
+        
+        showNotification(
+          `Found ${totalResults} cases (${ikResults} from Indian Kanoon, ${totalResults - ikResults} reference cases)`, 
+          'success'
+        );
+
+      } catch (error) {
+        console.error('Search error:', error);
+        loadingIndicator.style.display = 'none';
+        resultsContainer.innerHTML = `
+          <div class="case-card" style="text-align: center; color: var(--muted);">
+            Error searching cases: ${error.message}
+            <br><br>
+            Please check your connection and try again.
+          </div>
+        `;
+        showNotification('Search failed - please try again', 'error');
+      } finally {
+        loadingIndicator.style.display = 'none';
+        searchBtn.disabled = false;
+        searchBtn.textContent = 'Search Cases';
+      }
+    }
+
+    function displayResults(cases, query, rawData) {
+      if (cases.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="no-results shadow-soft">
+            <span class="icon">🔍</span>
+            <h3>No cases found for "${window.utils.escapeHTML(query)}"</h3>
+            <p>Try adjusting your search terms or legal topic.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Sort by priority (Indian Kanoon cases first)
+      cases.sort((a, b) => (a.priority || 3) - (b.priority || 3));
+
+      resultsContainer.innerHTML = `
+        <h3 class="text-gradient" style="margin-bottom: 1rem;">
+          Found ${cases.length} cases for: "${window.utils.escapeHTML(query)}"
+        </h3>
+      `;
+
+      cases.forEach((caseItem, index) => {
+        const caseCard = document.createElement('div');
+        caseCard.className = 'case-card';
+        caseCard.innerHTML = `
+          <div class="case-header">
+            <span class="case-source bg-gradient-secondary">${window.utils.escapeHTML(caseItem.source_type === 'indian_kanoon' ? 'Live' : 'Sample')}</span>
+            ${caseItem.year ? `<span class="case-year">${window.utils.escapeHTML(caseItem.year)}</span>` : ''}
+          </div>
+          <h3 class="case-title">${window.utils.escapeHTML(caseItem.title)}</h3>
+          ${caseItem.court ? `<p class="case-court"><strong>Court:</strong> ${window.utils.escapeHTML(caseItem.court)}</p>` : ''}
+          ${caseItem.citation ? `<p class="case-citation"><strong>Citation:</strong> ${window.utils.escapeHTML(caseItem.citation)}</p>` : ''}
+          <div class="case-section">
+            <strong>Summary:</strong>
+            <p>${window.utils.escapeHTML(caseItem.summary || 'No details available')}</p>
+          </div>
+          <div class="case-footer">
+            <button class="btn btn-sm" onclick="viewCase(${index})">View Full Details</button>
+            ${caseItem.url ? `<a href="${window.utils.escapeHTML(caseItem.url)}" target="_blank" class="btn btn-sm">View Online</a>` : ''}
+          </div>
+        `;
+        resultsContainer.appendChild(caseCard);
+      });
+
+      // Store results globally for modal access
+      window.searchResults = cases;
+    }
+
+    function viewCase(index) {
+      if (window.searchResults && window.searchResults[index]) {
+        openModal(window.searchResults[index]);
+      }
+    }
+
+    function clearSearch() {
+      document.getElementById('caseNumber').value = '';
+      document.getElementById('caseType').value = '';
+      document.getElementById('courtSelect').value = '';
+      document.getElementById('keywords').value = '';
+      document.getElementById('fromDate').value = '';
+      document.getElementById('toDate').value = '';
+      resultsContainer.innerHTML = '';
+      showNotification('Search form cleared', 'info');
+    }
+
+    // Event listeners
+    searchBtn.addEventListener('click', performSearch);
+    clearBtn.addEventListener('click', clearSearch);
+
+    // Allow Enter key to trigger search in any input field
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          performSearch();
+        }
+      });
+    });
+
+    // Expose functions globally for onclick handlers
+    window.viewCase = viewCase;
+    window.closeModal = closeModal;
+  </script>
+</body>
+</html>
